@@ -132,14 +132,14 @@ computeStatistics <-function(normDataTable, descriptionFile, defaultContr=TRUE,
 #===== Read norm file, depending on the file type. Used from R and web ### Use gdata library
 readExtFile <- function(filename,extension,outprint=FALSE){
   library(gdata)
-  dataTable = NULL;
+  dataTable <- NULL;
   switch(extension,
          ".txt" = dataTable<-trim(read.delim(filename, fill = FALSE, as.is=TRUE)),
          ".csv" = dataTable<-trim(read.csv(filename, fill = FALSE, as.is=TRUE)),
          ".xls" = dataTable<-trim(read.xls(filename, as.is=TRUE)),
          ".xlsx" = dataTable<-trim(read.xls(filename, as.is=TRUE))
 	)
-  if(is.null(dataTable)) stop(paste("extension",extension,"not regognised"))
+  if(is.null(dataTable)) stop(paste("extension",extension,"not recognised"))
   if(outprint){ # outprint is used from the website
 		cols<-colnames(dataTable)
 		for(i in 1:length(cols)){
