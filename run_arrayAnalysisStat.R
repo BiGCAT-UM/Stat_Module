@@ -16,7 +16,7 @@
 # See the License for the specific language governing permissions and         #
 # limitations under the License.                                              #
 #=============================================================================#
-version_nb <- "1.0.0"
+version_nb <- "2.0.0"
 cat("Script run using R version ",R.Version()$major,".",R.Version()$minor,
   " and arrayAnalysisStat version_",version_nb,"\n",sep="")
 
@@ -52,11 +52,22 @@ if(!exists("libdir")) { # libdir exists only for GenePattern usage
 ###############################################################################
 # Statistical analysis with limma 
 ###############################################################################
+if(basic){
 print ("Statistical analysis with limma")
 if(defaultContr==FALSE & is.null(matfileName)) stop("Need at least to compute default contrasts or to enter a contrast matrix file")
 files <- computeStatistics(normDataTable,descriptionFile,defaultContr,
 		matfileName,keepAnnotation) 
+}
 
+###############################################################################
+# Advanced Statistical analysis with limma 
+###############################################################################
+if(!basic){
+print ("Advanced Statistical analysis with limma")
+if(length(covariates_string)!=1) stop("Need some covariates")
+files <- computeAdvancedStatistics (normDataTable, descriptionFile, covariates_string, interaction_string, 
+                                   paired_string, plotVolcanoPlot, plotVennPlot, matfileName, keepAnnotation)
+}
 ###############################################################################
 # Creating table based on the cut-offs
 ###############################################################################

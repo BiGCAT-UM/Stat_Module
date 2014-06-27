@@ -2,7 +2,7 @@
 # ArrayAnalysis - affyAnalysisStat                                            #
 # a tool for statistical analysis of Affymetrix expression data               #
 #                                                                             #
-# Copyright 2010-2011 BiGCaT Bioinformatics                                   #
+# Copyright 2010-2014 BiGCaT Bioinformatics                                   #
 #                                                                             #
 # Licensed under the Apache License, Version 2.0 (the "License");             #
 # you may not use this file except in compliance with the License.            #
@@ -22,17 +22,23 @@
 ###############################################################################
 
 #see descriptions below
-normDataTable <- "" 
-descriptionFile <- ""
+normDataTable <- "/home/anwesha/workspaceArrayAnalysis/data/RMANormData_.txt" 
+descriptionFile <- "/home/anwesha/workspaceArrayAnalysis/data/description_set1_extended.txt"
+basic <- FALSE
 keepAnnotation <- FALSE
 defaultContr <- TRUE
+paired_string <- "Person"
+covariates_string <- c("Time,n")
+interaction_string <- c("Treatment,Time")
 matfileName <- NULL
 cutOffTable <- TRUE
 cutOffPval <- 0.5
 cutOfflogFC <- 2
 cutOffAveExpr <- 7
-plotPvalHist <- TRUE
-summaryTable <- TRUE
+plotPvalHist <- FALSE
+summaryTable <- FALSE
+plotVennPlot <- FALSE
+plotVolcanoPlot <- TRUE
 pvaluelist <- c(0.001,0.01,0.05, 0.1)
 adjpvaluelist <- c(0.05)
 foldchangelist <- c(1.1,1.5,3)
@@ -42,14 +48,14 @@ foldchangelist <- c(1.1,1.5,3)
 ###############################################################################
 
 # Change these Paths if needed #
-SCRIPT.DIR <- getwd()
-WORK.DIR <- getwd()
+SCRIPT.DIR <- "/home/anwesha/workspaceArrayAnalysis/Stat_Module"
+WORK.DIR <- "/home/anwesha/workspaceArrayAnalysis/data/today/"
 
 ###############################################################################
 # Run functions 		                          				              
 ###############################################################################
 
-source(paste(SCRIPT.DIR,"run_affyAnalysisStat.R",sep=""))
+source(paste(SCRIPT.DIR,"run_arrayAnalysisStat.R",sep="/"))
 
 ###############################################################################
 # PARAMETER DESCRIPTION                         				              #

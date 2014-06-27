@@ -2,7 +2,7 @@
 # ArrayAnalysis - affyAnalysisStat                                            #
 # a tool for statistical analysis of Affymetrix expression data               #
 #                                                                             #
-# Copyright 2010-2011 BiGCaT Bioinformatics                                   #
+# Copyright 2010-2014 BiGCaT Bioinformatics                                   #
 #                                                                             #
 # Licensed under the Apache License, Version 2.0 (the "License");             #
 # you may not use this file except in compliance with the License.            #
@@ -17,7 +17,8 @@
 # limitations under the License.                                              #
 #=============================================================================#
 
-arrayAnalysisStat<-function(...) {
+arrayAnalysisStat<-function(...) 
+  {
 
 ###############################################################################
 # Get input parameters                          				              #
@@ -29,7 +30,7 @@ arrayAnalysisStat<-function(...) {
 		value <- substring(args[[i]], 3, nchar(args[[i]]))
 		if(flag=='-r'){
 			refName = value
-print(refName)
+      print(refName)
 		}			
 		if(flag=='-n'){
 			normDataTable = value
@@ -75,6 +76,25 @@ print(descriptionFile)
 		if(flag=='-F'){
 			foldchangelist = value
 		}
+################################Added parameters
+    if(flag=='-b'){
+      basic= value
+    }
+    if(flag=='-v'){
+      plotVennDiagram= value
+    }
+    if(flag=='-V'){
+      plotVolcanoPlot= value
+    }
+    if(flag=='-a'){
+      Paired_String= value
+    }
+    if(flag=='-x'){
+      Covariates_String= value
+    }
+    if(flag=='-X'){
+      Interaction_String= value
+    }
 	}
 
 ###############################################################################
@@ -113,8 +133,8 @@ print(descriptionFile)
 # Run functions 		                          				              
 ###############################################################################
 	
-  source(paste(SCRIPT.DIR,"setParametersStat_web.R",sep=""),local=TRUE)
-  source(paste(SCRIPT.DIR,"run_arrayAnalysisStat.R",sep=""),local=TRUE)
+  source(paste(SCRIPT.DIR,"setParametersStat_web.R",sep="/"),local=TRUE)
+  source(paste(SCRIPT.DIR,"run_arrayAnalysisStat.R",sep="/"),local=TRUE)
    
 # PARAMETERS DESCRIPTION : see arrayAnalysisStat.R
 
