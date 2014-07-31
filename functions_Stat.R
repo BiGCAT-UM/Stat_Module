@@ -151,17 +151,36 @@ readExtFile <- function(filename,extension,outprint=FALSE){
 }
 
 #===== Read desc file. Return array names and groups. Used from R and web
-readDescFile <- function(descfile, outprint=FALSE){ 
+#descfile = "/home/anwesha/workspaceArrayAnalysis/data/description_set1_extended.txt"
+readDescFile <- function(descfile, outprint=FALSE){
+covariates = NULL;
+descriptionMatrix = NULL;
+
   extension<-strsplit(descfile,"\\.")
   extension<-paste(".",extension[[1]][length(extension[[1]])],sep="")
   descript<-readExtFile(descfile, extension)
 
   if(is.null(dim(descript))) {
 	stop("description file format was not recognized")
-  }else{ # desc file format: either identical than from QC or just 2 columns
-	if(dim(descript)[2]==2) descript<-cbind(rep("#",dim(descript)[1]),descript)
-  }
-  
+  }else{ 
+	# desc file format: either identical than from QC or just 2 columns
+	if(dim(descript)[2]==2) 
+		descript<-cbind(rep("#",dim(descript)[1]),descript)
+  	else{
+    		#Reading covariates
+    		if(dim(descript)[2]>3) {
+      			for(i in 4:dim(descript)[2]){
+        			cov = colnames(descript)[i]
+        			cov[is.numeric(cov)]<-paste("X",cov[is.numeric(cov)],sep="")
+				covariates = c(covariates,cov)
+        			#print (cov)
+        			assign(cov, descript[,i])
+        			#print (cov)
+      			}
+     		}
+  	}
+  } 
+print (covariates)
   # when coming from the web form, "@" means "annotation"
   arrayNames <- as.vector(descript[descript[,3]!="@",2])
   arrayNames[is.numeric(arrayNames)]<-paste("X",arrayNames[is.numeric(arrayNames)],sep="")
@@ -176,8 +195,17 @@ readDescFile <- function(descfile, outprint=FALSE){
     print(paste(paste(arrayNames,"\n",sep=""),collapse=""))
 	print(paste(paste(experimentFactor,"\n",sep=""),collapse=""))
   }else{
-	return<-cbind(arrayNames,experimentFactor)
+	descriptionMatrix <- cbind(arrayNames,experimentFactor)
+	if (!is.null(covariates)) { 
+     		for(i in 1:length(covariates)){
+			descriptionMatrix <- cbind(descriptionMatrix,get(covariates[i]))
+		}
+		colnames(descriptionMatrix)[3:(2+length(covariates))]=covariates
+	}
+	descriptionMatrix = as.data.frame(descriptionMatrix)
+	print (descriptionMatrix)
   }
+return (descriptionMatrix)
 }
 
 
@@ -343,6 +371,30 @@ createFCHist <- function(files) {
   }
 }
 
+createVolcanoPlot <- function(fit) {
+      #extract data from the comparison tables
+      
+      cat (paste("--[[ Saving volcano_plot.png ]]--\n"))
+      png("/home/anwesha/workspaceArrayAnalysis/data/plots/Volcano.png",width=1000,
+          height=1000, bg="white")
+      
+      volcanoplot(fit,coef=2,highlight=0, las=1)
+      dev.off()
+    }
+
+createVennPlot <- function(fit) {
+      #extract data from the comparison tables
+      
+      cat (paste("--[[ Saving","venn_plot.png ]]--\n"))
+      png("/home/anwesha/workspaceArrayAnalysis/data/plots/Venn.png",width=1000,
+          height=1000, bg="white")
+      
+      VennCounts<-vennCounts(fit, include="both")
+      vennDiagram(VennCounts, include="both", names=NULL, mar=rep(1,4), cex=c(1.5,1,0.7), lwd=1,
+                  circle.col=NULL, counts.col=NULL, show.include=NULL)
+      print("VennDiagram")
+      dev.off()
+    }
 
 #####################################
 ###Create significant pvalue table###
@@ -444,4 +496,191 @@ library(R2HTML)
   
   cat (paste("--[[ Saving Summary_tables.txt ]]--\n"))
 }
+
+###################################
+## computeMoreAdvancedStatistics ##
+###################################
+computeAdvancedStatistics <-function(normDataTable, descriptionFile, covariates_string, interaction_string, paired_string, plotVolcanoPlot, plotVennPlot, 
+                                     matfileName=NULL, keepAnnotation=FALSE) {
+  
+  # Load the data  
+  if(is.null(normDataTable)) stop("normDataTable has to be provided")
+  if(is.null(descriptionFile)) stop("descriptionFile has to be provided")
+  if(is.null(dim(normDataTable))) { # this is not a data.frame or matrix
+    extension<-strsplit(normDataTable,"\\.")
+    extension<-paste(".",extension[[1]][length(extension[[1]])],sep="")
+    try(ndt<-readExtFile(normDataTable, extension))
+    if(!exists("ndt")) stop("normDataTable format was not recognized")
+    normDataTable <- ndt
+    rm(ndt)
+  }
+  
+  descdata<-readDescFile(descriptionFile)
+  arrayNames<-descdata$arrayNames
+  
+  #in R, proper names should fulfill criteria, which already have been automatically applied to the column (array) names when reading the data
+  arrayNames <- make.names(arrayNames)
+  #if(sum(arrayNames != descdata[,1])>0) warning("One or more array names have been adapted to be valid R names")
+  #line above: warning not needed as arraynames are in non of the outcome files; if this changes, uncomment the line
+  
+  experimentFactor<-descdata$experimentFactor
+  
+  #in R, proper names cannot start with a number, so add a prefix if they do
+  experimentFactor <- make.names(experimentFactor)
+  #if(sum(experimentFactor != descdata[,2])>0) warning("One or more experimental group names have been adapted to be valid R names")
+  #for now the code still does not work with invalid R names as group names
+ # if(sum(experimentFactor != descdata[,2])>0) {
+  #  stop("One or more experimental group names are invalid R names\nplease don't use special characters other than . and _ and don't start names with a number")
+  #}
+  
+  experimentFactor<-as.factor(experimentFactor)
+  print(experimentFactor)
+  
+  
+  # Annotation  
+  
+  # if the first column header of the normalized data table is not in the 
+  # list of arrayNames, this will be defined as first column of annotation
+  # in the result tables (usually it contains the gene/probeset IDs)
+  firstColumn = NULL
+  if(sum(arrayNames==colnames(normDataTable)[1])==0) {
+    firstColumn <- as.matrix(normDataTable[,1])
+    colnames(firstColumn) <- colnames(normDataTable)[1]
+  }
+  
+  # other annotation columns are kept only if keepAnnotation is TRUE, in this 
+  # case, all other columns of normDataTable that were not recognized as
+  # array names are set to annotation. This annotation will be added at the  
+  # end of the result tables
+ annotation = NULL
+  if(keepAnnotation) {
+    headers <- colnames(normDataTable)
+    notArrayNames <- apply(as.matrix(headers[2:length(headers)]),1,function(x) {
+      sum(arrayNames==x)})
+    annotation <- normDataTable[,(which(notArrayNames==0)+1)]
+  }
+  
+  # Normalized data
+  # recreate the normDataTable based on the desc file to be sure that all  
+  # array groups are defined and the columns are correctly ordered:
+  normDataTable <- apply(as.matrix(arrayNames),1,function(x) {
+    as.numeric(normDataTable[,which(colnames(normDataTable)==x)])})
+  normDataTable <- as.data.frame(normDataTable)
+  colnames(normDataTable) <- arrayNames
+  
+  if(is.null(dim(normDataTable))) {
+    stop("could not match array names from description file to normalized data
+         file")
+  }
+  design = NULL
+  #Covariates
+  if(length(covariates_string)==1){
+	design1 = model.matrix(~0)
+    #read string  #for loop
+	Cov <- unlist(strsplit(covariates_string, ";"))
+	Design_Cov = ""
+    	for (i in 1:length(Cov)){
+      	Cov1 <- unlist(strsplit(Cov[i], ","))
+      	print(Cov1)
+      		if(Cov1[2]=="emp"){
+        		print(paste(Cov1[1],"not added to model"))
+      		}else{
+        		if(Cov1[2]=="n"){
+          			print ("TODO:as numeric")
+			}
+        		if(Cov1[2]=="f"){
+ 				print ("TODO:as factor")
+			}
+			assign(Cov1[1],descdata[,Cov1[1]])
+			covar = get(Cov1[1])
+          		design1 = model.matrix(~0+covar)
+			colnames(design1) <- gsub("covar",Cov1[1],colnames(design1)) 
+			design = cbind(design,design1)
+       			
+      		}
+    	}
+  }
+   print(design)
+    
+    #Interaction model
+    if(length(interaction_string)==1){  
+    	Inter <- unlist(strsplit(interaction_string, ";"))
+      	Design_Int = ""
+     	 for (i in 1:length(Inter)){
+        	Inter1 <- unlist(strsplit(Inter[i], ","))
+		iTerm1 = get(Inter1[1])
+		iTerm2 = get(Inter1[2])
+        	design3 = model.matrix(~0+iTerm1*iTerm2)
+		colnames(design3) <- gsub("iTerm1",paste(Inter1[1],"_",sep=""),colnames(design3)) 
+		colnames(design3) <- gsub("iTerm2",paste(Inter1[2],"_",sep=""),colnames(design3)) 
+		design = cbind(design,design3)
+     	}
+     } 
+  
+  rownames(design) <- arrayNames
+  print(design)
+
+	
+  
+  #Paired vs unpaired data 
+  if(length(paired_string)==1){ 
+	assign(paired_string,descdata[,paired_string])
+	pairing = get(paired_string)
+	##Calculate correlation
+	corfit <- duplicateCorrelation(normDataTable,design,ndups=1,block=pairing)
+	#print the value to screen
+	corfit$consensus 
+  	if(is.finite(corfit$consensus)){  
+    		#Paired data
+    		fit <- lmFit(normDataTable, design, ndups=1, block=pairing, correlation=corfit$consensus)
+   		fit <- eBayes(fit)
+ 		}
+	else {
+    		#corfit$consensus is NA 
+    		fit <- lmFit(normDataTable,design)
+   		fit <- eBayes(fit)
+  		}
+	}else {
+    		#Unpaired data
+    		fit <- lmFit(normDataTable,design)
+   		fit <- eBayes(fit)
+  		}
+print(fit)
+	
+  #Pass the Fit
+if(plotVolcanoPlot){
+ createVolcanoPlot(fit)
+}
+if(plotVennPlot){
+ createVennPlot(fit)
+} 
+ 
+  
+  # Use contrast matrix to generate group comparisons  
+  filesNew<-NULL
+  if(defaultContr) { # always FALSE when coming from the web form.  
+    if(length(levels(experimentFactor))<=4){
+      #make contrast
+      cont.matrix <- defaultMatrix(design)
+      
+      defFiles<-saveComparison(cont.matrix,fit,normDataTable,
+                               annotation,firstColumn)
+      filesNew<-c(filesNew,defFiles)
+    }
+    else
+      print ("[[----Cant compute default matrices for more than four 
+             groups----]]")
+  }
+  if(!is.null(matfileName)) {
+    #be careful, since the saved contrast matrix still uses the not corrected names, also pass the not corrected names
+    cont.matrix <- enterMatrix(matfileName,descdata[,2])
+    advFiles<-saveComparison(cont.matrix,fit,normDataTable,
+                             annotation,firstColumn)
+    filesNew<-c(filesNew,advFiles)
+  }
+  
+  return(filesNew)
+  
+ }
+
 
