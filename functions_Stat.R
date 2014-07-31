@@ -534,6 +534,7 @@ computeAdvancedStatistics <-function(normDataTable, descriptionFile, covariates_
   #}
   
   experimentFactor<-as.factor(experimentFactor)
+  print("Groups in data")
   print(experimentFactor)
   
   
@@ -575,29 +576,33 @@ computeAdvancedStatistics <-function(normDataTable, descriptionFile, covariates_
   design = NULL
   #Covariates
   if(length(covariates_string)==1){
-	design1 = model.matrix(~0)
-    #read string  #for loop
+	#design1 = model.matrix(~0)
+   	 #read string  
 	Cov <- unlist(strsplit(covariates_string, ";"))
-	Design_Cov = ""
+	columnNames = NULL
+	#for loop
     	for (i in 1:length(Cov)){
-      	Cov1 <- unlist(strsplit(Cov[i], ","))
-      	print(Cov1)
+      		Cov1 <- unlist(strsplit(Cov[i], ","))
+      		print(Cov1)
       		if(Cov1[2]=="emp"){
-        		print(paste(Cov1[1],"not added to model"))
-      		}else{
-        		if(Cov1[2]=="n"){
-          			print ("TODO:as numeric")
-			}
-        		if(Cov1[2]=="f"){
- 				print ("TODO:as factor")
-			}
+        	print(paste(Cov1[1],"not added to model"))
+      		}
+		else{
+			#columnNames = c(columnNames, Cov1[1])
 			assign(Cov1[1],descdata[,Cov1[1]])
 			covar = get(Cov1[1])
-          		design1 = model.matrix(~0+covar)
+        		if(Cov1[2]=="n"){
+          			covar = as.numeric(covar)
+ 				print (paste(Cov1[1],"added to model as numeric"))
+			}
+        		if(Cov1[2]=="f"){
+				covar = as.factor(covar)
+ 				print (paste(Cov1[1],"added to model as factor"))
+			}
+			design1 = model.matrix(~0+covar)
 			colnames(design1) <- gsub("covar",Cov1[1],colnames(design1)) 
-			design = cbind(design,design1)
-       			
-      		}
+			design = cbind(design,des)
+       		}
     	}
   }
    print(design)
@@ -607,16 +612,17 @@ computeAdvancedStatistics <-function(normDataTable, descriptionFile, covariates_
     	Inter <- unlist(strsplit(interaction_string, ";"))
       	Design_Int = ""
      	 for (i in 1:length(Inter)){
-        	Inter1 <- unlist(strsplit(Inter[i], ","))
+		Inter1 <- unlist(strsplit(Inter[i], ","))
+		assign(Inter1[1],descdata[,Inter1[1]])
 		iTerm1 = get(Inter1[1])
+		assign(Inter1[2],descdata[,Inter1[2]])
 		iTerm2 = get(Inter1[2])
-        	design3 = model.matrix(~0+iTerm1*iTerm2)
+		design3 = model.matrix(~0+iTerm1*iTerm2)
 		colnames(design3) <- gsub("iTerm1",paste(Inter1[1],"_",sep=""),colnames(design3)) 
 		colnames(design3) <- gsub("iTerm2",paste(Inter1[2],"_",sep=""),colnames(design3)) 
 		design = cbind(design,design3)
      	}
      } 
-  
   rownames(design) <- arrayNames
   print(design)
 

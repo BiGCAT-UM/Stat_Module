@@ -28,7 +28,7 @@ basic <- FALSE
 keepAnnotation <- FALSE
 defaultContr <- TRUE
 paired_string <- "Person"
-covariates_string <- c("Time,n")
+covariates_string <- c("Time,f;Treatment,f")
 interaction_string <- c("Treatment,Time")
 matfileName <- NULL
 cutOffTable <- TRUE
