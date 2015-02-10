@@ -319,16 +319,16 @@ createCutOffTab <- function(files,cutOffPval=NULL,cutOfflogFC=NULL,
 	for(i in 1:length(files)){
 		tab <- read.delim (files[i],header=TRUE)
 		if(!is.null(cutOffPval)){
-			tab<-tab[(tab[,"P.Value"]<=cutOffPval),]
+			tab<-tab[(tab[,"P.Value"]<=as.numeric(cutOffPval)),]
 			colnames(tab)[colnames(tab)=="P.Value"] <- paste("P.Value<=",
 				cutOffPval)
 		}
 		if(!is.null(cutOfflogFC)){
-			tab<-tab[(tab[,"logFC"]>=cutOfflogFC),]
+			tab<-tab[(abs(tab[,"logFC"])>=as.numeric(cutOfflogFC)),]
 			colnames(tab)[colnames(tab)=="logFC"]<-paste("logFC>=",cutOfflogFC)
 		}
 		if(!is.null(cutOffAveExpr)){
-			tab<-tab[(tab[,"AveExpr"]>=cutOffAveExpr),]
+			tab<-tab[(tab[,"AveExpr"]>=as.numeric(cutOffAveExpr)),]
 			colnames(tab)[colnames(tab)=="AveExpr"] <- paste("AveExpr>=",
 				cutOffAveExpr)
 		}
