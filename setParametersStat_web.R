@@ -1,8 +1,7 @@
 #for compatibility with R local script, set every variable to a boolean depending on whether it exists
 # only to be run when the code is called from the webportal or GenePattern
 
-setwd("/home/anwesha/workspaceArrayAnalysis/Stat_Module")
-if(!exists("basic")) basic <- FALSE 
+if(!exists("basic")) basic <- TRUE 
 if(!exists("refName")) refName <- "0" 
 if(!exists("normDataTable")) normDataTable <- "" 
 if(!exists("descriptionFile")) descriptionFile <- ""
